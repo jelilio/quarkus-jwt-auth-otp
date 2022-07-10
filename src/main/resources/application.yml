@@ -1,0 +1,38 @@
+## HTTP configuration
+quarkus:
+  http:
+    port: 8083
+    cors: true # disable cors
+    host: 0.0.0.0 # allow to be access form all host ips
+
+  # drop and create the database at startup (use `update` to only update the schema)
+  hibernate-orm:
+    database:
+      generation: drop-and-create
+
+  mailer:
+    mock: true
+
+  smallrye-jwt:
+    add-keys: true # add keys to native image
+
+mp:
+  jwt:
+    verify:
+      issuer: https://jelilio.github.io
+      publickey:
+        location: ${PUBLIC_KEY}
+
+
+io:
+  jelilio:
+    github:
+      jwt-auth-otp:
+        jwt:
+          duration: 3600
+        password:
+          secret: z2y55dvv
+          iteration: 33
+          keylength: 256
+        otp:
+          duration: 3600

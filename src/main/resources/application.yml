@@ -24,6 +24,8 @@ mp:
   jwt:
     verify:
       issuer: https://jelilio.github.io
+      privatekey:
+        location: ${PRIVATE_KEY}
       publickey:
         location: ${PUBLIC_KEY}
 
@@ -39,4 +41,4 @@ io:
           iteration: 33
           keylength: 256
         otp:
-          duration: 3600
+          duration: 60

@@ -22,7 +22,5 @@ public interface UserService {
 
   Uni<AuthResponse> verifyEmail(String email, String otpKey);
 
-  Uni<User> validateOtp(String email, String otpKey);
-
   Uni<Tuple2<User, Long>> requestOtp(String email);
 }

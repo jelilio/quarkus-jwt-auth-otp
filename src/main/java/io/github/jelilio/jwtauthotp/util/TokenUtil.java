@@ -12,11 +12,12 @@ import java.util.Base64;
 import java.util.Set;
 
 public class TokenUtil {
-  public static final String USER_ID = "login_id";
+  public static final String USER_ID = "user_id";
 
-  public static String generateToken(String loginId, String username, Set<String> groups, Long duration, String issuer) throws Exception {
-    String privateKeyLocation = "/privatekey.pem";
-    PrivateKey privateKey = readPrivateKey(privateKeyLocation);
+  public static String generateToken(
+      String loginId, String username, Set<String> groups, Long duration, String issuer, String privateKeyLocation
+  ) throws Exception {
+    PrivateKey privateKey = readPrivateKey("/" + privateKeyLocation);
 
     JwtClaimsBuilder claimsBuilder = Jwt.claims();
     long currentTimeInSecs = currentTimeInSecs();

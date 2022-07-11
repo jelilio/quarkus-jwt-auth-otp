@@ -52,7 +52,7 @@ public class User extends AbstractAuditingEntity {
   public Instant lastLoginDate;
   
   @ManyToMany(fetch = FetchType.EAGER)
-  @JoinTable(name = "user_roles",
+  @JoinTable(name = "users_roles",
       joinColumns = @JoinColumn(name = "user_id"),
       inverseJoinColumns = @JoinColumn(name = "role_name")
   )

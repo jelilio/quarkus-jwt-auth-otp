@@ -14,11 +14,11 @@ import java.util.concurrent.TimeUnit;
 @ApplicationScoped
 public class MailerServiceImpl implements MailerService {
   @Inject
-  @Location("templates/mails/verification")
+  @Location("mails/verification")
   MailTemplate otpVerification;;
 
   @Inject
-  @Location("templates/mails/activation")
+  @Location("mails/activation")
   MailTemplate activationMail;
 
   @Override

@@ -24,6 +24,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -49,13 +50,16 @@ public class UserServiceImpl implements UserService {
   @Inject
   MailerService mailerService;
 
-  @ConfigProperty(name = "com.japharr.ajo-app.jwt.duration")
+  @ConfigProperty(name = "io.jelilio.github.jwt-auth-otp.jwt.duration")
   Long duration;
   
   @ConfigProperty(name = "mp.jwt.verify.issuer")
   String issuer;
 
-  @ConfigProperty(name = "com.japharr.ajo-app.otp.duration")
+  @ConfigProperty(name = "mp.jwt.verify.privatekey.location")
+  String privateKeyLocation;
+
+  @ConfigProperty(name = "io.jelilio.github.jwt-auth-otp.otp.duration")
   Long otpKeyDuration; // in seconds
 
   @Override
@@ -85,7 +89,7 @@ public class UserServiceImpl implements UserService {
   public Uni<Tuple2<User, Long>> authenticate(String usernameOrEmail, String password) {
     logger.debug("usernameOrEmail: {}, password: {}", usernameOrEmail, password);
 
-    var invalidAuthentication = new AuthenticationException("Invalid username or newPassword", AUTH_LOGIN_INVALID);
+    var invalidAuthentication = new AuthenticationException("Invalid username or password", AUTH_LOGIN_INVALID);
 
     Uni<User> userUni = User.findByUsernameOrEmail(usernameOrEmail)
         .onItem().ifNull().failWith(() -> invalidAuthentication);
@@ -125,17 +129,16 @@ public class UserServiceImpl implements UserService {
         .flatMap(__ -> createToken(user)));
   }
 
-  @Override
-  public Uni<User> validateOtp(String usernameOrEmail, String otpKey) {
+  private Uni<User> validateOtp(String usernameOrEmail, String otpKey) {
     Uni<User> userUni = User.findByUsernameOrEmail(usernameOrEmail)
         .onItem().ifNull().failWith(() -> new AuthenticationException("No user with this email/username found", AUTH_LOGIN_INVALID));
 
-    return userUni.flatMap(login -> {
-      if(!login.enabled) {
+    return userUni.flatMap(user -> {
+      if(!user.enabled) {
         return Uni.createFrom().failure(() -> new AuthenticationException("Your account has been disabled, contact your administrator", AUTH_LOGIN_DISABLED));
       }
 
-      if(login.isActivated()) {
+      if(user.isActivated()) {
         return Uni.createFrom().failure(() -> new AuthenticationException("Already activated", AUTH_LOGIN_ACTIVATED));
       }
 
@@ -148,7 +151,7 @@ public class UserServiceImpl implements UserService {
           return Uni.createFrom().failure(() -> new AuthenticationException("Invalid OTP", AUTH_OTP_INVALID));
         }
 
-        return Uni.createFrom().item(login);
+        return Uni.createFrom().item(user);
       });
     });
   }
@@ -158,32 +161,32 @@ public class UserServiceImpl implements UserService {
     Uni<User> loginUni = User.findByUsernameOrEmail(usernameOrEmail)
         .onItem().ifNull().failWith(() -> new AuthenticationException("Email or username not registered", AUTH_LOGIN_INVALID));
 
-    return loginUni.flatMap(login -> {
-      if (!login.enabled) {
+    return loginUni.flatMap(user -> {
+      if (!user.enabled) {
         return Uni.createFrom().failure(() -> new AuthenticationException("Your account has been disabled, contact your administrator", AUTH_LOGIN_DISABLED));
       }
 
-      if(login.isActivated()) {
+      if(user.isActivated()) {
         return Uni.createFrom().failure(() -> new AuthenticationException("Already activated", AUTH_LOGIN_ACTIVATED));
       }
 
-      return createOtp(usernameOrEmail, login);
+      return createOtp(usernameOrEmail, user);
     });
   }
 
   private Uni<Tuple2<User, Long>> create(BasicRegisterDto dto) {
     logger.debug("creating: email: {}, name: {}", dto.email(), dto.name());
     // check if email is already registered and activated
-    Uni<Boolean> uniEmailCount = checkIfEmailAvailable(dto.email());
+    Uni<Boolean> uniEmailAvailable = checkIfEmailAvailable(dto.email());
     // fetch User if email is already registered but not activated
     Uni<User> extLoginUni = User.findByEmailAndNotActivated(dto.email());
     Uni<List<Role>> uniRole = roleService.getOrCreate(Set.of("ROLE_USER"));
 
     return uniRole.flatMap(role -> Uni.combine().all()
-        .unis(uniEmailCount, extLoginUni).asTuple().flatMap(item -> {
-          var emailCount = item.getItem1();
+        .unis(uniEmailAvailable, extLoginUni).asTuple().flatMap(item -> {
+          var emailAvailable = item.getItem1();
 
-          if(emailCount) {
+          if(emailAvailable) {
             return Uni.createFrom().failure(() -> new AlreadyExistException("Email already in used"));
           }
 
@@ -201,21 +204,22 @@ public class UserServiceImpl implements UserService {
 
   private Uni<Tuple2<User, Long>> createOtp(String usernameOrEmail, User user) {
     var otpKey = randomUtil.generateOtp();
-    Uni<Response> responseUni = reactiveRedisClient.setex(
-        usernameOrEmail, otpKey, String.valueOf(otpKeyDuration));
+
+    var responseUni = reactiveRedisClient.set(Arrays.asList(usernameOrEmail, otpKey))
+        .flatMap(__ -> reactiveRedisClient.expire(usernameOrEmail, String.valueOf(otpKeyDuration)));
 
     return responseUni
         .flatMap(__ -> mailerService.sendOtpMail(user, otpKey, otpKeyDuration)
             .map(it -> Tuple2.of(user, otpKeyDuration)));
   }
 
-  private Uni<AuthResponse> createToken(User login) {
+  private Uni<AuthResponse> createToken(User user) {
     try {
-      Uni<AuthResponse> response = Uni.createFrom().item(new AuthResponse(TokenUtil.generateToken(login.id.toString(), login.email,
-          login.getRoles(), duration, issuer)));
+      Uni<AuthResponse> response = Uni.createFrom().item(new AuthResponse(TokenUtil.generateToken(user.id.toString(), user.email,
+          user.getRoles(), duration, issuer, privateKeyLocation)));
 
-      login.lastLoginDate = Instant.now();
-      return Panache.withTransaction(login::persist).flatMap(__ -> response);
+      user.lastLoginDate = Instant.now();
+      return Panache.withTransaction(user::persist).flatMap(__ -> response);
     } catch (Exception e) {
       return Uni.createFrom().failure(() -> new AuthenticationException("Unable to generate token, try again later", AUTH_BAD_TOKEN));
     }

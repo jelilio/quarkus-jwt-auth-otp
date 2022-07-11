@@ -43,7 +43,7 @@ public class RoleServiceImpl implements RoleService {
   public Uni<Role> create(RoleDto dto) {
     return checkIfExist(dto.name()).flatMap(check -> {
       if(check) {
-        throw new AlreadyExistException(String.format("Transaction-type with this name: %s, already exist", dto.name()));
+        throw new AlreadyExistException(String.format("Role with this name: %s, already exist", dto.name()));
       }
 
       Role role = new Role(dto.name(), dto.permissions());

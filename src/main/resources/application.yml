@@ -13,6 +13,10 @@ quarkus:
   mailer:
     mock: true
 
+  redis:
+    devservices:
+      image-name: redis
+
   smallrye-jwt:
     add-keys: true # add keys to native image
 

@@ -10,9 +10,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
@@ -46,6 +48,8 @@ public class User extends AbstractAuditingEntity {
 
   @JsonIgnore
   public Instant activatedDate;
+
+  public Instant lastLoginDate;
   
   @ManyToMany(fetch = FetchType.EAGER)
   @JoinTable(name = "user_roles",
@@ -91,5 +95,12 @@ public class User extends AbstractAuditingEntity {
 
   public void activate() {
     this.activatedDate = Instant.now();
+  }
+
+  public Set<String> getRoles() {
+    return roles.stream()
+        .map(item -> item.getPermissions(true))
+        .flatMap(Collection::stream)
+        .collect(Collectors.toSet());
   }
 }

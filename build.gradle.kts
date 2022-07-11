@@ -25,6 +25,9 @@ dependencies {
     implementation("io.quarkus:quarkus-resteasy-reactive-jackson")
     implementation("io.quarkus:quarkus-hibernate-reactive-panache")
 
+    // Redis
+    implementation("io.quarkus:quarkus-redis-client")
+
     // for mail
     implementation("io.quarkus:quarkus-mailer")
     implementation("io.quarkus:quarkus-resteasy-reactive-qute")

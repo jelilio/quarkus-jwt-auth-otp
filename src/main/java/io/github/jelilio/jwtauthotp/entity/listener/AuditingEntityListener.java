@@ -3,28 +3,30 @@ package io.github.jelilio.jwtauthotp.entity.listener;
 import io.github.jelilio.jwtauthotp.entity.base.AbstractAuditingEntity;
 import org.eclipse.microprofile.jwt.Claim;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import java.time.Instant;
 
-@ApplicationScoped
+import static io.github.jelilio.jwtauthotp.util.TokenUtil.USER_ID;
+
+@RequestScoped
 public class AuditingEntityListener {
-  @Claim("login_id")
-  public String loginId;
+  @Claim(USER_ID)
+  public String userId;
 
   @PrePersist
   private void prePersist(AbstractAuditingEntity entity) {
-    entity.createdBy = loginId == null? "system" : loginId;
+    entity.createdBy = userId == null? "system" : userId;
     entity.createdDate = Instant.now();
 
-    entity.lastModifiedBy = loginId == null? "system" : loginId;
+    entity.lastModifiedBy = userId == null? "system" : userId;
     entity.lastModifiedDate = Instant.now();
   }
 
   @PreUpdate
   public void preUpdate(AbstractAuditingEntity entity) {
-    entity.lastModifiedBy = loginId == null? "system" : loginId;
+    entity.lastModifiedBy = userId == null? "system" : userId;
     entity.lastModifiedDate = Instant.now();
   }
 }

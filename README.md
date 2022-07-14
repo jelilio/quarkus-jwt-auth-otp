@@ -1,6 +1,17 @@
-# jwt-authentication-otp Project
+# JWT-Authentication with OTP (Quarkus)
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+This is a sample project on JWT Authentication with Quarkus. It demonstrates the use of JWT tokens for authentication and how email verification can be implemented using OTP.
+It also implements role based authorization and provides basic endpoints for registration, authentication and verification.
+
+## Stack
+- Java
+- Quarkus
+- Postgresql
+- Redis
+- Gradle
+
+## Generate public and private keys
+
 
 If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
 

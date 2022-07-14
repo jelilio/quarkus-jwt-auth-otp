@@ -1,7 +1,7 @@
 ## HTTP configuration
 quarkus:
   http:
-    port: 8083
+    port: 8080
     cors: true # disable cors
     host: 0.0.0.0 # allow to be access form all host ips
 

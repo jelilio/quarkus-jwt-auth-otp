@@ -1,4 +1,4 @@
-# JWT-Authentication with OTP (Quarkus)
+# JWT-Authentication and Authorization with OTP (Quarkus)
 
 This is a sample project on JWT Authentication with Quarkus. It demonstrates the use of JWT tokens for authentication and how email verification can be implemented using OTP.
 It also implements role based authorization and provides basic endpoints for registration, authentication and verification.
